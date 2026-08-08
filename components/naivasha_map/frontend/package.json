@@ -1,0 +1,18 @@
+{
+  "name": "naivasha-map-component",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@arcgis/core": "^4.30.0",
+    "@esri/calcite-components": "^2.13.0",
+    "streamlit-component-lib": "^2.0.0"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}

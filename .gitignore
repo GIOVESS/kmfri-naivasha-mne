@@ -1,0 +1,21 @@
+# Secrets — never commit
+.streamlit/secrets.toml
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Node
+components/naivasha_map/frontend/node_modules/
+
+# Streamlit
+.streamlit/cache/
+
+# OS
+.DS_Store
+
+# Large/generated imagery cache (regenerate via scripts/fetch_imagery_cache.py)
+data/imagery/*.tif

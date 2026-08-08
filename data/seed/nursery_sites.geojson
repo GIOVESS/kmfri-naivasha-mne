@@ -1,0 +1,73 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          36.361,
+          -0.744
+        ]
+      },
+      "properties": {
+        "site_code": "KOR-01",
+        "site_name": "Korongo",
+        "stakeholder": "NAOFO",
+        "established": "2022-03-01",
+        "capacity_units": 5000
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          36.28,
+          -0.75
+        ]
+      },
+      "properties": {
+        "site_code": "OSE-01",
+        "site_name": "Oserian",
+        "stakeholder": "LANABLA",
+        "established": "2021-11-15",
+        "capacity_units": 8000
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          36.371,
+          -0.78
+        ]
+      },
+      "properties": {
+        "site_code": "CRE-01",
+        "site_name": "Crescent",
+        "stakeholder": "KWS",
+        "established": "2023-01-10",
+        "capacity_units": 3000
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          36.36,
+          -0.729
+        ]
+      },
+      "properties": {
+        "site_code": "KWS-ANX",
+        "site_name": "KWS Annex",
+        "stakeholder": "NEMA",
+        "established": "2022-07-20",
+        "capacity_units": 4000
+      }
+    }
+  ]
+}

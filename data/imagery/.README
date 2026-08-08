@@ -1,0 +1,11 @@
+This directory holds the cached Sentinel-2 scene used as a raster fallback
+(see services/imagery.py). It ships empty in this build.
+
+To populate it, run from an environment with network access to
+earth-search.aws.element84.com:
+
+    pip install pystac-client rasterio --break-system-packages
+    python3 scripts/fetch_imagery_cache.py
+
+Without a cached scene, the app still runs — the map just won't have a
+raster imagery overlay until this file is populated.
