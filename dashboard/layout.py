@@ -48,7 +48,7 @@ def render_header() -> None:
             </h2>
             <p style="color:{GIOSPATIAL_GREEN_BRIGHT}; margin:0; font-family:'Montserrat', sans-serif;
                       font-size: clamp(0.85rem, 2.5vw, 1rem);">
-                Lake Naivasha Basin · GIOSPATIAL
+                Naivasha Basin Intelligence System (NBIS) by GIOSPATIAL
             </p>
         </div>
         """,
