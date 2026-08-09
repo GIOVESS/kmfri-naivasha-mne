@@ -9,7 +9,6 @@
   },
   "dependencies": {
     "@arcgis/core": "^4.30.0",
-    "@esri/calcite-components": "^2.13.0",
     "streamlit-component-lib": "^2.0.0"
   },
   "devDependencies": {

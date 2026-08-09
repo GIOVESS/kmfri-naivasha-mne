@@ -9,17 +9,24 @@ import Zoom from "@arcgis/core/widgets/Zoom.js";
 import Home from "@arcgis/core/widgets/Home.js";
 import Compass from "@arcgis/core/widgets/Compass.js";
 import ScaleBar from "@arcgis/core/widgets/ScaleBar.js";
+import Attribution from "@arcgis/core/widgets/Attribution.js";
 import "@arcgis/core/assets/esri/themes/dark/main.css"; // required for widgets (Zoom/Home/
-                                                          // Compass/ScaleBar) to render styled
-                                                          // and positioned — without this they
-                                                          // exist in the DOM but are invisible
-import "@esri/calcite-components/dist/calcite/calcite.css";
-import { defineCustomElements } from "@esri/calcite-components/dist/loader";
+                                                          // Compass/ScaleBar/popups) to render
+                                                          // styled and positioned — without this
+                                                          // they exist in the DOM but are invisible
 
 import { initBridge, setSiteSelection, setFrameHeight } from "./bridge.js";
 import "./style.css";
 
-defineCustomElements(window);
+// NOTE: do not import @esri/calcite-components here. @arcgis/core bundles
+// its own internal Calcite Components build for widgets/popups (a newer
+// version than the standalone @esri/calcite-components package). Loading
+// both registers the same custom element tags twice — this was the actual
+// cause of invisible/blank widget icons, "Cannot redefine property:
+// version", and empty popups (the popup's internal Calcite UI fails to
+// initialize when its message-bundle fetch collides with the other
+// registered version). Anything using calcite-* elements should rely on
+// the version @arcgis/core already provides.
 
 // Colors tuned for a light Voyager basemap: distinct hues per restoration
 // phase (rather than two similar greens, which were tuned for contrast
@@ -144,11 +151,14 @@ function buildMap(args) {
       content: [
         {
           type: "fields",
+          // Only fields actually present in nursery_sites_geojson()'s
+          // output (scripts/schema.sql) — "established" isn't in that
+          // RPC's properties, only in the full-row REST fetch used by the
+          // Streamlit side panel, so it never rendered here.
           fieldInfos: [
             { fieldName: "site_code", label: "Site code" },
             { fieldName: "stakeholder", label: "Stakeholder" },
             { fieldName: "capacity_units", label: "Capacity (seedlings)" },
-            { fieldName: "established", label: "Established" },
           ],
         },
       ],
@@ -174,6 +184,13 @@ function buildMap(args) {
     // marker/polygon palette (greens, blue, grey).
     highlightOptions: { color: "#FFC107", haloOpacity: 0.9, fillOpacity: 0.25 },
   });
+
+  // MapView ships with a default Zoom widget (top-left) and Attribution
+  // widget (bottom-right) already in view.ui.components. We add our own
+  // explicit Zoom/Home/Compass/ScaleBar/Attribution below — without
+  // clearing the defaults first, that left TWO independent Zoom widgets
+  // both wired to the same view, stacked in the same corner.
+  view.ui.components = [];
 
   view.on("click", async (event) => {
     const hit = await view.hitTest(event, { include: nurseryLayer });
@@ -217,6 +234,9 @@ function buildMap(args) {
     view.ui.add(new Zoom({ view }), "top-left");
     view.ui.add(new Compass({ view }), "top-left");
     view.ui.add(new ScaleBar({ view, unit: "metric" }), "bottom-left");
+    // Required attribution for OSM/CARTO's free tiles — was previously
+    // provided by the default Attribution widget we just cleared above.
+    view.ui.add(new Attribution({ view }), "bottom-right");
 
     setFrameHeight(effectiveHeight(args.height));
     previousSelectedSiteId = args.selectedSiteId; // avoid a spurious reset-animation on the next rerun
