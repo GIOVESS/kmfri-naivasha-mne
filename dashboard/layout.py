@@ -18,17 +18,19 @@ logger = logging.getLogger(__name__)
 GIOSPATIAL_GREEN = "#265B01"
 GIOSPATIAL_DARK_GREEN = "#152C00"
 GIOSPATIAL_NAVY = "#141B44"
+GIOSPATIAL_GREEN_BRIGHT = "#5BC221"  # readable on dark backgrounds; header/chart accent only
 
 
 def render_header() -> None:
     st.markdown(
         f"""
         <div style="background-color:{GIOSPATIAL_NAVY}; padding: 1rem 1.5rem;
-                    border-radius: 6px; margin-bottom: 1rem;">
+                    border-radius: 6px; margin-bottom: 1rem;
+                    border: 1px solid rgba(255,255,255,0.08);">
             <h2 style="color:white; margin:0; font-family:'Montserrat', sans-serif;">
                 KMFRI Papyrus Wetland M&amp;E Platform
             </h2>
-            <p style="color:{GIOSPATIAL_GREEN}; margin:0; font-family:'Montserrat', sans-serif;">
+            <p style="color:{GIOSPATIAL_GREEN_BRIGHT}; margin:0; font-family:'Montserrat', sans-serif;">
                 Lake Naivasha Basin · GIOSPATIAL
             </p>
         </div>

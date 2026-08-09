@@ -11,13 +11,16 @@ import "./style.css";
 
 defineCustomElements(window);
 
+// Colors brightened relative to the literal brand green (#265B01/#152C00) —
+// against a dark basemap those read as near-black. This keeps site markers
+// and polygon fills legible without changing the brand's light-mode assets.
 const NURSERY_SITE_RENDERER = {
   type: "simple",
   symbol: {
     type: "simple-marker",
-    color: "#265B01",
-    outline: { color: "#152C00", width: 1.5 },
-    size: 10,
+    color: "#5BC221",
+    outline: { color: "#0E1116", width: 1.5 },
+    size: 11,
   },
 };
 
@@ -25,9 +28,9 @@ const RESTORATION_POLYGON_RENDERER = {
   type: "unique-value",
   field: "phase",
   uniqueValueInfos: [
-    { value: "pilot", symbol: fillSymbol("#265B01") },
-    { value: "target", symbol: fillSymbol("#152C00") },
-    { value: "baseline", symbol: fillSymbol("#8a8a8a") },
+    { value: "pilot", symbol: fillSymbol("#3A8A00") },
+    { value: "target", symbol: fillSymbol("#8FD14F") },
+    { value: "baseline", symbol: fillSymbol("#9BA3AE") },
   ],
 };
 
@@ -56,7 +59,12 @@ let polygonLayer = null;
 function buildMap(args) {
   esriConfig.apiKey = args.arcgisApiKey;
 
-  const map = new Map({ basemap: "arcgis-topographic" });
+  // Dark basemap: keeps Lake Naivasha's shoreline and built-up/residential
+  // areas legible while matching the app's dark theme. Requires a valid
+  // ArcGIS API key (esriConfig.apiKey, set above) — without one, Esri's
+  // hosted basemap tiles won't load and only the GeoJSON overlay layers
+  // below (which render client-side) will be visible.
+  const map = new Map({ basemap: "arcgis-dark-gray" });
 
   nurseryLayer = new GeoJSONLayer({
     url: geojsonToBlobUrl(args.nurserySites || { type: "FeatureCollection", features: [] }),

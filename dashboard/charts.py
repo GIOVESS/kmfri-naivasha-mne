@@ -5,11 +5,21 @@ from typing import Any
 
 import plotly.graph_objects as go
 
+# Dark-mode chart chrome, applied via fig.update_layout(**DARK_LAYOUT) in every
+# figure below so charts match the app's dark Streamlit theme instead of
+# rendering as bright white cards.
+DARK_LAYOUT = dict(
+    template="plotly_dark",
+    paper_bgcolor="#141B24",
+    plot_bgcolor="#141B24",
+    font=dict(color="#E8ECE4"),
+)
+
 
 def landings_trend(landings: list[dict[str, Any]]) -> go.Figure:
     fig = go.Figure()
     if not landings:
-        fig.update_layout(title="Fish landings — no data for current filter")
+        fig.update_layout(title="Fish landings — no data for current filter", **DARK_LAYOUT)
         return fig
 
     by_species: dict[str, list[dict[str, Any]]] = {}
@@ -27,6 +37,7 @@ def landings_trend(landings: list[dict[str, Any]]) -> go.Figure:
             )
         )
     fig.update_layout(
+        **DARK_LAYOUT,
         title="Fish landings over time (kg)",
         xaxis_title="Date",
         yaxis_title="Catch (kg)",
@@ -39,7 +50,7 @@ def landings_trend(landings: list[dict[str, Any]]) -> go.Figure:
 def water_quality_trend(readings: list[dict[str, Any]]) -> go.Figure:
     fig = go.Figure()
     if not readings:
-        fig.update_layout(title="Water quality — no data for current filter")
+        fig.update_layout(title="Water quality — no data for current filter", **DARK_LAYOUT)
         return fig
 
     readings = sorted(readings, key=lambda r: r["sample_date"])
@@ -51,6 +62,7 @@ def water_quality_trend(readings: list[dict[str, Any]]) -> go.Figure:
                               mode="lines+markers", name="Dissolved O2 (mg/L)", yaxis="y2"))
 
     fig.update_layout(
+        **DARK_LAYOUT,
         title="Water quality over time",
         xaxis_title="Date",
         yaxis=dict(title="Turbidity (NTU)"),
@@ -66,18 +78,22 @@ def cover_progress(polygons_geojson: dict[str, Any]) -> go.Figure:
     features = polygons_geojson.get("features", [])
     fig = go.Figure()
     if not features:
-        fig.update_layout(title="Papyrus cover progress — no data")
+        fig.update_layout(title="Papyrus cover progress — no data", **DARK_LAYOUT)
         return fig
 
     labels = [f["properties"]["polygon_code"] for f in features]
     covers = [f["properties"].get("cover_pct") or 0 for f in features]
     phases = [f["properties"]["phase"] for f in features]
 
-    phase_colors = {"pilot": "#265B01", "target": "#152C00", "baseline": "#8a8a8a"}
-    colors = [phase_colors.get(p, "#265B01") for p in phases]
+    # Brightened for contrast against the dark chart background — the brand's
+    # dark green (#152C00) is nearly invisible on #141B24, so "target" uses a
+    # lighter tint instead of the literal brand color here.
+    phase_colors = {"pilot": "#3A8A00", "target": "#8FD14F", "baseline": "#9BA3AE"}
+    colors = [phase_colors.get(p, "#3A8A00") for p in phases]
 
     fig.add_trace(go.Bar(x=labels, y=covers, marker_color=colors, text=phases))
     fig.update_layout(
+        **DARK_LAYOUT,
         title="Papyrus cover progress by restoration polygon (%)",
         xaxis_title="Polygon",
         yaxis_title="Cover %",
