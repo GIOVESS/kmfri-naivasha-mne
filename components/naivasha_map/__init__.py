@@ -29,13 +29,16 @@ def naivasha_map(
     nursery_sites: dict[str, Any],
     restoration_polygons: dict[str, Any],
     selected_site_id: int | None = None,
+    reset_token: int = 0,
     height: int = 600,
     key: str | None = None,
 ) -> dict[str, Any] | None:
     """
     Render the ArcGIS MapView. Returns the last value passed to
-    Streamlit.setComponentValue() by bridge.js — e.g. {"site_id": 3}
-    when the user clicks a nursery site marker.
+    Streamlit.setComponentValue() by bridge.js — e.g. {"site_id": 3,
+    "click_seq": 4} when the user clicks a nursery site marker, or
+    {"site_id": None, "click_seq": 5} when the frontend detects
+    reset_token changed and re-emits a clear itself (see main.js).
     """
     try:
         arcgis_api_key = st.secrets["arcgis"]["api_key"]
@@ -47,6 +50,7 @@ def naivasha_map(
         nurserySites=nursery_sites,
         restorationPolygons=restoration_polygons,
         selectedSiteId=selected_site_id,
+        resetToken=reset_token,
         arcgisApiKey=arcgis_api_key,
         height=height,
         key=key,

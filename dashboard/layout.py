@@ -18,7 +18,7 @@ import streamlit as st
 
 from components.naivasha_map import naivasha_map
 from dashboard import charts
-from dashboard.filters import get_selected_site_id, set_selected_site_id, sync_from_map_component
+from dashboard.filters import get_selected_site_id, get_reset_token, sync_from_map_component, trigger_reset
 from services.landings_repo import get_landings
 from services.sites_repo import get_nursery_site_by_id, get_nursery_sites_geojson, \
     get_restoration_polygons_geojson, list_nursery_sites
@@ -73,6 +73,7 @@ def render_map_and_selection(site_id: int | None, sites: list[dict]) -> None:
             nursery_sites=sites_fc,
             restoration_polygons=polygons_fc,
             selected_site_id=site_id,
+            reset_token=get_reset_token(),
             height=560,
             key="naivasha_map_main",
         )
@@ -88,7 +89,7 @@ def render_map_and_selection(site_id: int | None, sites: list[dict]) -> None:
             st.caption("Site filter")
         with reset_col:
             if st.button("Reset", use_container_width=True, disabled=site_id is None):
-                set_selected_site_id(None)
+                trigger_reset()
                 st.rerun()
 
         site = get_nursery_site_by_id(site_id) if site_id else None

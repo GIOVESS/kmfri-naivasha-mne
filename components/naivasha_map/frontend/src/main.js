@@ -111,6 +111,8 @@ let previousSelectedSiteId; // undefined until first render — distinguishes
                             // "never selected anything" from "selection was
                             // just cleared", so Reset Filters snaps the view
                             // back but initial load doesn't animate for no reason
+let lastSeenResetToken; // undefined until first render — same idea, so the
+                        // initial mount isn't mistaken for a reset event
 
 const HOME_VIEWPOINT = { center: [36.32, -0.77], zoom: 12 }; // Lake Naivasha
 const TRANSITION = { duration: 400, easing: "ease-in-out" };
@@ -192,6 +194,12 @@ function buildMap(args) {
   // both wired to the same view, stacked in the same corner.
   view.ui.components = [];
 
+  // Baselines set synchronously here (not inside the async view.when()
+  // below) so there's no window where a rapid second render could see
+  // `view` already truthy but these still undefined.
+  previousSelectedSiteId = args.selectedSiteId;
+  lastSeenResetToken = args.resetToken;
+
   view.on("click", async (event) => {
     const hit = await view.hitTest(event, { include: nurseryLayer });
     const graphicHit = hit.results.find((r) => r.graphic?.layer === nurseryLayer);
@@ -239,7 +247,6 @@ function buildMap(args) {
     view.ui.add(new Attribution({ view }), "bottom-right");
 
     setFrameHeight(effectiveHeight(args.height));
-    previousSelectedSiteId = args.selectedSiteId; // avoid a spurious reset-animation on the next rerun
   });
 }
 
@@ -284,6 +291,16 @@ initBridge((args) => {
   if (!view) {
     buildMap(args);
   } else {
+    // dashboard/filters.py's trigger_reset() bumps reset_token as a prop
+    // rather than relying on selectedSiteId=None alone reaching Python's
+    // session_state reliably — this re-confirms the clear through the same
+    // setComponentValue channel used for marker clicks, so there's a single
+    // source of truth for site_id instead of two independent writers
+    // racing against each other.
+    if (lastSeenResetToken !== undefined && args.resetToken !== lastSeenResetToken) {
+      lastSeenResetToken = args.resetToken;
+      setSiteSelection(null);
+    }
     updateSelection(args.selectedSiteId);
     setFrameHeight(effectiveHeight(args.height));
   }
