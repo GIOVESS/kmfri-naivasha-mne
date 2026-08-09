@@ -1,1 +1,0 @@
-import{cx as o}from"./index-CvOrGjPP.js";function c(n){return(n==null?void 0:n.name)??o}export{c as r};

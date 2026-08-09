@@ -9,6 +9,8 @@ import { Streamlit } from "streamlit-component-lib";
 export function initBridge(onRenderArgs) {
   Streamlit.events.addEventListener(Streamlit.RENDER_EVENT, (event) => {
     const args = event.detail.args;
+    // TEMPORARY DEBUG — remove once Reset Filters is confirmed fixed.
+    console.log("[naivasha_map] RENDER_EVENT args:", args);
     onRenderArgs(args);
   });
   Streamlit.setComponentReady();
@@ -26,7 +28,10 @@ export function setSiteSelection(siteId) {
   // the reset right back to the previously-selected site. See
   // dashboard/filters.py's sync_from_map_component for the other half of this.
   clickCounter += 1;
-  Streamlit.setComponentValue({ site_id: siteId, click_seq: clickCounter });
+  const payload = { site_id: siteId, click_seq: clickCounter };
+  // TEMPORARY DEBUG — remove once Reset Filters is confirmed fixed.
+  console.log("[naivasha_map] setSiteSelection() -> Streamlit.setComponentValue:", payload);
+  Streamlit.setComponentValue(payload);
 }
 
 export function setFrameHeight(height) {
