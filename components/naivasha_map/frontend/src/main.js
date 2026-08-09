@@ -21,15 +21,16 @@ import "./style.css";
 
 defineCustomElements(window);
 
-// Colors brightened relative to the literal brand green (#265B01/#152C00) —
-// against a dark basemap those read as near-black. This keeps site markers
-// and polygon fills legible without changing the brand's light-mode assets.
+// Colors tuned for a light Voyager basemap: distinct hues per restoration
+// phase (rather than two similar greens, which were tuned for contrast
+// against a dark basemap and are hard to tell apart on a light one) and a
+// dark marker outline for definition against light tiles.
 const NURSERY_SITE_RENDERER = {
   type: "simple",
   symbol: {
     type: "simple-marker",
-    color: "#5BC221",
-    outline: { color: "#0E1116", width: 1.5 },
+    color: "#2E7D32",
+    outline: { color: "#FFFFFF", width: 2 },
     size: 11,
   },
 };
@@ -38,17 +39,17 @@ const RESTORATION_POLYGON_RENDERER = {
   type: "unique-value",
   field: "phase",
   uniqueValueInfos: [
-    { value: "pilot", symbol: fillSymbol("#3A8A00") },
-    { value: "target", symbol: fillSymbol("#8FD14F") },
-    { value: "baseline", symbol: fillSymbol("#9BA3AE") },
+    { value: "pilot", symbol: fillSymbol("#2E7D32") },
+    { value: "target", symbol: fillSymbol("#1565C0") },
+    { value: "baseline", symbol: fillSymbol("#757575") },
   ],
 };
 
 function fillSymbol(color) {
   return {
     type: "simple-fill",
-    color: [...hexToRgb(color), 0.35],
-    outline: { color, width: 1.5 },
+    color: [...hexToRgb(color), 0.4],
+    outline: { color, width: 2 },
   };
 }
 
@@ -58,9 +59,12 @@ function hexToRgb(hex) {
 }
 
 /**
- * Basemap: CARTO Dark Matter tiles (free, no API key, no referrer allowlisting
- * required) rather than Esri's hosted basemap-styles service. Clearly shows
- * Lake Naivasha's shoreline, road network, and built-up/residential areas.
+ * Basemap: CARTO Voyager tiles (free, no API key, no referrer allowlisting
+ * required) rather than Esri's hosted basemap-styles service. Voyager is a
+ * light, high-contrast style — lake shoreline, roads, and built-up/
+ * residential areas are all clearly labeled and colored, which reads better
+ * than a dark basemap for this kind of site-inspection use case even though
+ * the surrounding app chrome is dark-themed.
  *
  * This is a deliberate scope decision, not a workaround for a broken key:
  * a fully authoritative, custom-digitized basemap (papyrus extent, gazetted
@@ -68,19 +72,19 @@ function hexToRgb(hex) {
  * and real digitization work — that's a Phase 1 line item, not a demo-stage
  * requirement. See system-design.md ADR-5.
  */
-function buildDarkBasemap() {
+function buildBasemap() {
   return new Basemap({
     baseLayers: [
       new WebTileLayer({
         // @2x retina tiles — crisper labels/roads than the base resolution,
         // which read as washed-out on high-DPI screens.
-        urlTemplate: "https://{subDomain}.basemaps.cartocdn.com/dark_all/{level}/{col}/{row}@2x.png",
+        urlTemplate: "https://{subDomain}.basemaps.cartocdn.com/rastertiles/voyager/{level}/{col}/{row}@2x.png",
         subDomains: ["a", "b", "c", "d"],
         copyright: "© OpenStreetMap contributors © CARTO",
       }),
     ],
-    title: "carto-dark",
-    id: "carto-dark",
+    title: "carto-voyager",
+    id: "carto-voyager",
   });
 }
 
@@ -100,7 +104,7 @@ function buildMap(args) {
   // on this key) — no longer required for the basemap itself, see below.
   esriConfig.apiKey = args.arcgisApiKey;
 
-  const map = new Map({ basemap: buildDarkBasemap() });
+  const map = new Map({ basemap: buildBasemap() });
 
   nurseryLayer = new GeoJSONLayer({
     url: geojsonToBlobUrl(args.nurserySites || { type: "FeatureCollection", features: [] }),

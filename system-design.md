@@ -86,7 +86,9 @@ works.
 
 ## ADR-5: Free CARTO basemap for the demo; authoritative digitization scoped to Phase 1
 
-**Decision:** `main.js` builds the map's basemap from CARTO Dark Matter tiles
+**Decision:** `main.js` builds the map's basemap from CARTO Voyager tiles
+(a light, high-contrast style — clearer than a dark basemap for site
+inspection even though the surrounding app is dark-themed)
 (`WebTileLayer` wrapped in a `Basemap`) instead of Esri's hosted
 basemap-styles service. No API key, no referrer allowlisting — the tiles are
 free and public. Lake Naivasha's shoreline, roads, and built-up/residential

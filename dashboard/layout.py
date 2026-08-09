@@ -59,7 +59,7 @@ def render_map_panel() -> None:
     )
     sync_from_map_component(component_value)
     st.caption(
-        "Basemap: CARTO Dark Matter (free tiles). Click a marker to filter the "
+        "Basemap: CARTO Voyager (free tiles). Click a marker to filter the "
         "charts below to that site; use Home (top-left) to reset the view."
     )
 

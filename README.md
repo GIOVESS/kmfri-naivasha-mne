@@ -78,7 +78,7 @@ environment with network access to Earth Search (Element84).
 
 ## Basemap — demo vs. Phase 1
 
-The map currently uses free CARTO Dark Matter tiles (no API key required).
+The map currently uses free CARTO Voyager tiles (no API key required).
 This is a demo-stage choice for reliability, not a placeholder for something
 broken — see `system-design.md` ADR-5. A fully authoritative, custom-digitized
 basemap (verified papyrus extent, gazetted boundaries, surveyed residential/
