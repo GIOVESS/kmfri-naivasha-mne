@@ -76,6 +76,15 @@ python3 scripts/build_seed_sql.py     # writes data/seed/seed_inserts.sql
 show a Sentinel-2 raster overlay until the cache is populated from an
 environment with network access to Earth Search (Element84).
 
+## Basemap — demo vs. Phase 1
+
+The map currently uses free CARTO Dark Matter tiles (no API key required).
+This is a demo-stage choice for reliability, not a placeholder for something
+broken — see `system-design.md` ADR-5. A fully authoritative, custom-digitized
+basemap (verified papyrus extent, gazetted boundaries, surveyed residential/
+road layers) needs an Esri Creator seat and real digitization work; that's
+scoped as a Phase 1 deliverable.
+
 ## Deploying
 
 Push to a GitHub repo and deploy via Streamlit Community Cloud, pointing it

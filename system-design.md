@@ -84,6 +84,38 @@ general internet egress) to populate it. The app degrades gracefully without
 it: no raster overlay, everything else (vector layers, charts, filters)
 works.
 
+## ADR-5: Free CARTO basemap for the demo; authoritative digitization scoped to Phase 1
+
+**Decision:** `main.js` builds the map's basemap from CARTO Dark Matter tiles
+(`WebTileLayer` wrapped in a `Basemap`) instead of Esri's hosted
+basemap-styles service. No API key, no referrer allowlisting — the tiles are
+free and public. Lake Naivasha's shoreline, roads, and built-up/residential
+areas are all visible out of the box.
+
+**Why:** The ArcGIS API key (permanent, expires 2027, Basemaps/Places/
+Geocoding/Routing/Elevation privileges enabled — confirmed via the Location
+Platform credentials page) should support Esri's hosted basemap styles, but
+debugging that further wasn't worth blocking the demo on. CARTO's free tiles
+get to "clearly digitized, dark, lake + roads + residential visible" in one
+change, with fewer moving parts (no key, no CORS/referrer config) to break
+across environments.
+
+**What this is not:** a substitute for authoritative digitization. CARTO's
+tiles are OpenStreetMap-derived — fine for orientation, not surveyed against
+KWS/WRA gazetted boundaries or KMFRI's own papyrus extent mapping. A
+production platform would want a custom vector basemap (papyrus extent,
+verified shoreline, gazetted land-use boundaries) built and hosted on
+ArcGIS Online, which needs a Creator seat and real digitization work.
+**That's explicitly scoped as a Phase 1 deliverable**, not part of this
+demo build.
+
+**Reversal path:** swap `buildDarkBasemap()` in `main.js` back to
+`new Map({ basemap: "arcgis-dark-gray" })` (or any Esri basemap style ID)
+once Esri-hosted basemaps are confirmed working end-to-end, or once a custom
+digitized basemap item exists to reference by portal item ID. `esriConfig.apiKey`
+is still set in `buildMap()` for Places/Geocoding/Routing, so no other wiring
+changes are needed.
+
 ## Data model
 
 Four tables, all keyed to `nursery_sites` by `site_id`/`nursery_site_id`:

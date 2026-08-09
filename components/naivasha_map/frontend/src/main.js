@@ -1,5 +1,7 @@
 import esriConfig from "@arcgis/core/config.js";
 import Map from "@arcgis/core/Map.js";
+import Basemap from "@arcgis/core/Basemap.js";
+import WebTileLayer from "@arcgis/core/layers/WebTileLayer.js";
 import MapView from "@arcgis/core/views/MapView.js";
 import GeoJSONLayer from "@arcgis/core/layers/GeoJSONLayer.js";
 import Graphic from "@arcgis/core/Graphic.js";
@@ -47,6 +49,31 @@ function hexToRgb(hex) {
   return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
 }
 
+/**
+ * Basemap: CARTO Dark Matter tiles (free, no API key, no referrer allowlisting
+ * required) rather than Esri's hosted basemap-styles service. Clearly shows
+ * Lake Naivasha's shoreline, road network, and built-up/residential areas.
+ *
+ * This is a deliberate scope decision, not a workaround for a broken key:
+ * a fully authoritative, custom-digitized basemap (papyrus extent, gazetted
+ * boundaries, verified road/residential layers) needs an Esri Creator seat
+ * and real digitization work — that's a Phase 1 line item, not a demo-stage
+ * requirement. See system-design.md ADR-5.
+ */
+function buildDarkBasemap() {
+  return new Basemap({
+    baseLayers: [
+      new WebTileLayer({
+        urlTemplate: "https://{subDomain}.basemaps.cartocdn.com/dark_all/{level}/{col}/{row}.png",
+        subDomains: ["a", "b", "c", "d"],
+        copyright: "© OpenStreetMap contributors © CARTO",
+      }),
+    ],
+    title: "carto-dark",
+    id: "carto-dark",
+  });
+}
+
 function geojsonToBlobUrl(featureCollection) {
   const blob = new Blob([JSON.stringify(featureCollection)], { type: "application/json" });
   return URL.createObjectURL(blob);
@@ -57,14 +84,11 @@ let nurseryLayer = null;
 let polygonLayer = null;
 
 function buildMap(args) {
+  // Kept for future Places/Geocoding/Routing use (privileges already enabled
+  // on this key) — no longer required for the basemap itself, see below.
   esriConfig.apiKey = args.arcgisApiKey;
 
-  // Dark basemap: keeps Lake Naivasha's shoreline and built-up/residential
-  // areas legible while matching the app's dark theme. Requires a valid
-  // ArcGIS API key (esriConfig.apiKey, set above) — without one, Esri's
-  // hosted basemap tiles won't load and only the GeoJSON overlay layers
-  // below (which render client-side) will be visible.
-  const map = new Map({ basemap: "arcgis-dark-gray" });
+  const map = new Map({ basemap: buildDarkBasemap() });
 
   nurseryLayer = new GeoJSONLayer({
     url: geojsonToBlobUrl(args.nurserySites || { type: "FeatureCollection", features: [] }),
