@@ -29,15 +29,21 @@ GIOSPATIAL_GREEN_BRIGHT = "#5BC221"  # readable on dark backgrounds; header/char
 
 
 def render_header() -> None:
+    # clamp() instead of a fixed size/padding + media query breakpoint — scales
+    # smoothly from phone widths up to desktop without a hard jump at any
+    # particular viewport size.
     st.markdown(
         f"""
-        <div style="background-color:{GIOSPATIAL_NAVY}; padding: 1rem 1.5rem;
+        <div style="background-color:{GIOSPATIAL_NAVY};
+                    padding: clamp(0.75rem, 3vw, 1rem) clamp(1rem, 4vw, 1.5rem);
                     border-radius: 6px; margin-bottom: 1rem;
                     border: 1px solid rgba(255,255,255,0.08);">
-            <h2 style="color:white; margin:0; font-family:'Montserrat', sans-serif;">
+            <h2 style="color:white; margin:0; font-family:'Montserrat', sans-serif;
+                       font-size: clamp(1.25rem, 4vw, 1.75rem);">
                 KMFRI Papyrus Wetland M&amp;E Platform
             </h2>
-            <p style="color:{GIOSPATIAL_GREEN_BRIGHT}; margin:0; font-family:'Montserrat', sans-serif;">
+            <p style="color:{GIOSPATIAL_GREEN_BRIGHT}; margin:0; font-family:'Montserrat', sans-serif;
+                      font-size: clamp(0.85rem, 2.5vw, 1rem);">
                 Lake Naivasha Basin · GIOSPATIAL
             </p>
         </div>

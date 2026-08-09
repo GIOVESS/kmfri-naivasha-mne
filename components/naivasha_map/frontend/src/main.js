@@ -107,6 +107,25 @@ let previousSelectedSiteId; // undefined until first render — distinguishes
 
 const HOME_VIEWPOINT = { center: [36.32, -0.77], zoom: 12 }; // Lake Naivasha
 const TRANSITION = { duration: 400, easing: "ease-in-out" };
+const MOBILE_BREAKPOINT_PX = 768;
+const MOBILE_MAP_HEIGHT_PX = 380;
+
+let lastRequestedHeight = 600;
+
+// Streamlit sets the component iframe's height to whatever we pass
+// setFrameHeight, and it doesn't recompute on its own when the viewport
+// resizes — so on a narrow/mobile screen the full desktop height (often
+// 500-600px) would eat most of the visible page. Cap it client-side instead
+// of asking every caller in dashboard/layout.py to know about breakpoints.
+function effectiveHeight(requestedHeight) {
+  const height = requestedHeight || 600;
+  const isNarrow = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT_PX}px)`).matches;
+  return isNarrow ? Math.min(height, MOBILE_MAP_HEIGHT_PX) : height;
+}
+
+window.addEventListener("resize", () => {
+  if (view) setFrameHeight(effectiveHeight(lastRequestedHeight));
+});
 
 function buildMap(args) {
   // Kept for future Places/Geocoding/Routing use (privileges already enabled
@@ -199,7 +218,7 @@ function buildMap(args) {
     view.ui.add(new Compass({ view }), "top-left");
     view.ui.add(new ScaleBar({ view, unit: "metric" }), "bottom-left");
 
-    setFrameHeight(args.height || 600);
+    setFrameHeight(effectiveHeight(args.height));
     previousSelectedSiteId = args.selectedSiteId; // avoid a spurious reset-animation on the next rerun
   });
 }
@@ -241,10 +260,11 @@ function updateSelection(selectedSiteId) {
 }
 
 initBridge((args) => {
+  lastRequestedHeight = args.height || 600;
   if (!view) {
     buildMap(args);
   } else {
     updateSelection(args.selectedSiteId);
-    setFrameHeight(args.height || 600);
+    setFrameHeight(effectiveHeight(args.height));
   }
 });

@@ -13,6 +13,9 @@ DARK_LAYOUT = dict(
     paper_bgcolor="#141B24",
     plot_bgcolor="#141B24",
     font=dict(color="#E8ECE4"),
+    height=380,  # shorter fixed height keeps the mobile scroll manageable
+                 # (width is already responsive via use_container_width=True
+                 # in every st.plotly_chart call)
 )
 
 
