@@ -100,3 +100,49 @@ def cover_progress(polygons_geojson: dict[str, Any]) -> go.Figure:
         margin=dict(l=40, r=20, t=40, b=40),
     )
     return fig
+
+
+def species_share(landings: list[dict[str, Any]]) -> go.Figure:
+    """Donut: total catch_kg share by species, for the current site filter."""
+    totals: dict[str, float] = {}
+    for row in landings:
+        totals[row["species"]] = totals.get(row["species"], 0) + row["catch_kg"]
+
+    fig = go.Figure()
+    if not totals:
+        fig.update_layout(title="Catch share by species — no data", **DARK_LAYOUT)
+        return fig
+
+    species_colors = {"Tilapia": "#5BC221", "Common carp": "#E8664B"}
+    colors = [species_colors.get(s, "#9BA3AE") for s in totals]
+
+    fig.add_trace(go.Pie(labels=list(totals.keys()), values=list(totals.values()),
+                          hole=0.5, marker=dict(colors=colors)))
+    fig.update_layout(
+        **DARK_LAYOUT,
+        title="Total catch share by species (kg)",
+        margin=dict(l=20, r=20, t=40, b=20),
+    )
+    return fig
+
+
+def stakeholder_capacity(sites: list[dict[str, Any]]) -> go.Figure:
+    """Bar: total nursery seedling capacity summed by stakeholder, network-wide."""
+    totals: dict[str, int] = {}
+    for s in sites:
+        totals[s["stakeholder"]] = totals.get(s["stakeholder"], 0) + (s.get("capacity_units") or 0)
+
+    fig = go.Figure()
+    if not totals:
+        fig.update_layout(title="Nursery capacity by stakeholder — no data", **DARK_LAYOUT)
+        return fig
+
+    fig.add_trace(go.Bar(x=list(totals.keys()), y=list(totals.values()), marker_color="#3A8A00"))
+    fig.update_layout(
+        **DARK_LAYOUT,
+        title="Nursery capacity by stakeholder (seedlings)",
+        xaxis_title="Stakeholder",
+        yaxis_title="Capacity (units)",
+        margin=dict(l=40, r=20, t=40, b=40),
+    )
+    return fig

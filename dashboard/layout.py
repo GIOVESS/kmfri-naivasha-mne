@@ -1,8 +1,15 @@
-"""Page structure: map (left) + KPI/charts (right), site filter synced from map clicks."""
+"""
+Page structure: full-width map up top (nav controls live in the component
+itself — see components/naivasha_map/frontend/src/main.js), KPI rows above
+and below it, then a 2-column grid of charts, then a full sites table.
+
+Site filter is synced from map clicks via dashboard.filters.
+"""
 from __future__ import annotations
 
 import logging
 
+import pandas as pd
 import streamlit as st
 
 from components.naivasha_map import naivasha_map
@@ -10,7 +17,7 @@ from dashboard import charts
 from dashboard.filters import get_selected_site_id, sync_from_map_component
 from services.landings_repo import get_landings
 from services.sites_repo import get_nursery_site_by_id, get_nursery_sites_geojson, \
-    get_restoration_polygons_geojson
+    get_restoration_polygons_geojson, list_nursery_sites
 from services.water_quality_repo import get_water_quality
 
 logger = logging.getLogger(__name__)
@@ -47,42 +54,113 @@ def render_map_panel() -> None:
         nursery_sites=sites_fc,
         restoration_polygons=polygons_fc,
         selected_site_id=get_selected_site_id(),
+        height=560,
         key="naivasha_map_main",
     )
     sync_from_map_component(component_value)
+    st.caption(
+        "Basemap: CARTO Dark Matter (free tiles). Click a marker to filter the "
+        "charts below to that site; use Home (top-left) to reset the view."
+    )
 
 
-def render_kpi_row(site_id: int | None) -> None:
-    cols = st.columns(3)
+def render_top_kpi_row(site_id: int | None, sites: list[dict]) -> None:
+    """Selection-aware row: what you're currently looking at."""
     site = get_nursery_site_by_id(site_id) if site_id else None
+    total_capacity = sum((s.get("capacity_units") or 0) for s in sites)
 
+    cols = st.columns(4)
     with cols[0]:
         st.metric("Selected site", site["site_name"] if site else "All sites")
     with cols[1]:
-        st.metric("Stakeholder", site["stakeholder"] if site else "—")
+        st.metric("Stakeholder", site["stakeholder"] if site else f"{len(sites)} sites")
     with cols[2]:
-        st.metric("Nursery capacity", site.get("capacity_units", "—") if site else "—")
+        st.metric("Nursery capacity", site.get("capacity_units", "—") if site else f"{total_capacity:,}")
+    with cols[3]:
+        st.metric("Established", site.get("established", "—") if site else "—")
 
 
-def render_charts_panel(site_id: int | None) -> None:
-    landings = get_landings(site_id)
-    water_quality = get_water_quality(site_id)
-    polygons_fc = get_restoration_polygons_geojson()
+def render_network_kpi_row(
+    sites: list[dict], all_landings: list[dict], all_wq: list[dict], polygons_fc: dict
+) -> None:
+    """Selection-independent row: basin-wide totals, always visible."""
+    total_catch = sum(r["catch_kg"] for r in all_landings)
+    latest_wq = max(all_wq, key=lambda r: r["sample_date"]) if all_wq else None
+    features = polygons_fc.get("features", [])
+    avg_cover = (
+        sum((f["properties"].get("cover_pct") or 0) for f in features) / len(features)
+        if features else None
+    )
 
-    st.plotly_chart(charts.landings_trend(landings), use_container_width=True)
-    st.plotly_chart(charts.water_quality_trend(water_quality), use_container_width=True)
-    st.plotly_chart(charts.cover_progress(polygons_fc), use_container_width=True)
+    cols = st.columns(4)
+    with cols[0]:
+        st.metric("Restoration polygons", len(features))
+    with cols[1]:
+        st.metric("Avg. papyrus cover", f"{avg_cover:.1f}%" if avg_cover is not None else "—")
+    with cols[2]:
+        st.metric("Total catch (all-time)", f"{total_catch:,.0f} kg" if total_catch else "—")
+    with cols[3]:
+        st.metric(
+            "Latest water sample",
+            latest_wq["sample_date"] if latest_wq else "—",
+            help="Most recent turbidity/DO/pH/temperature reading across all sites.",
+        )
+
+
+def render_charts_grid(
+    site_id: int | None,
+    landings: list[dict],
+    water_quality: list[dict],
+    polygons_fc: dict,
+    sites: list[dict],
+) -> None:
+    row1_left, row1_right = st.columns(2)
+    with row1_left:
+        st.plotly_chart(charts.landings_trend(landings), use_container_width=True)
+    with row1_right:
+        st.plotly_chart(charts.water_quality_trend(water_quality), use_container_width=True)
+
+    row2_left, row2_right = st.columns(2)
+    with row2_left:
+        st.plotly_chart(charts.cover_progress(polygons_fc), use_container_width=True)
+    with row2_right:
+        st.plotly_chart(charts.species_share(landings), use_container_width=True)
+
+    # Network-wide, not filtered by site selection — deliberately full-width
+    # since it's a basin-level comparison, not a per-site drill-down.
+    st.plotly_chart(charts.stakeholder_capacity(sites), use_container_width=True)
+
+
+def render_sites_table(sites: list[dict]) -> None:
+    st.subheader("Nursery sites")
+    if not sites:
+        st.caption("No nursery sites found.")
+        return
+    df = pd.DataFrame(sites)[["site_code", "site_name", "stakeholder", "capacity_units"]]
+    df.columns = ["Site code", "Name", "Stakeholder", "Capacity (seedlings)"]
+    st.dataframe(df, use_container_width=True, hide_index=True)
 
 
 def render_page() -> None:
     render_header()
-    map_col, chart_col = st.columns([3, 2])
 
-    with map_col:
-        render_map_panel()
+    sites = list_nursery_sites()
+    polygons_fc = get_restoration_polygons_geojson()
+    all_landings = get_landings()
+    all_wq = get_water_quality()
+
+    render_network_kpi_row(sites, all_landings, all_wq, polygons_fc)
+    st.divider()
+
+    render_map_panel()
 
     site_id = get_selected_site_id()
+    st.divider()
+    render_top_kpi_row(site_id, sites)
 
-    with chart_col:
-        render_kpi_row(site_id)
-        render_charts_panel(site_id)
+    landings = get_landings(site_id) if site_id else all_landings
+    water_quality = get_water_quality(site_id) if site_id else all_wq
+
+    render_charts_grid(site_id, landings, water_quality, polygons_fc, sites)
+    st.divider()
+    render_sites_table(sites)

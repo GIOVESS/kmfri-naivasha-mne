@@ -5,6 +5,10 @@ import WebTileLayer from "@arcgis/core/layers/WebTileLayer.js";
 import MapView from "@arcgis/core/views/MapView.js";
 import GeoJSONLayer from "@arcgis/core/layers/GeoJSONLayer.js";
 import Graphic from "@arcgis/core/Graphic.js";
+import Zoom from "@arcgis/core/widgets/Zoom.js";
+import Home from "@arcgis/core/widgets/Home.js";
+import Compass from "@arcgis/core/widgets/Compass.js";
+import ScaleBar from "@arcgis/core/widgets/ScaleBar.js";
 import "@esri/calcite-components/dist/calcite/calcite.css";
 import { defineCustomElements } from "@esri/calcite-components/dist/loader";
 
@@ -64,7 +68,9 @@ function buildDarkBasemap() {
   return new Basemap({
     baseLayers: [
       new WebTileLayer({
-        urlTemplate: "https://{subDomain}.basemaps.cartocdn.com/dark_all/{level}/{col}/{row}.png",
+        // @2x retina tiles — crisper labels/roads than the base resolution,
+        // which read as washed-out on high-DPI screens.
+        urlTemplate: "https://{subDomain}.basemaps.cartocdn.com/dark_all/{level}/{col}/{row}@2x.png",
         subDomains: ["a", "b", "c", "d"],
         copyright: "© OpenStreetMap contributors © CARTO",
       }),
@@ -82,6 +88,8 @@ function geojsonToBlobUrl(featureCollection) {
 let view = null;
 let nurseryLayer = null;
 let polygonLayer = null;
+
+const HOME_VIEWPOINT = { center: [36.32, -0.77], zoom: 12 }; // Lake Naivasha
 
 function buildMap(args) {
   // Kept for future Places/Geocoding/Routing use (privileges already enabled
@@ -109,8 +117,8 @@ function buildMap(args) {
   view = new MapView({
     container: "map-container",
     map,
-    center: [36.32, -0.77], // Lake Naivasha
-    zoom: 12,
+    center: HOME_VIEWPOINT.center,
+    zoom: HOME_VIEWPOINT.zoom,
   });
 
   view.on("click", async (event) => {
@@ -121,7 +129,19 @@ function buildMap(args) {
     }
   });
 
-  view.when(() => setFrameHeight(args.height || 600));
+  view.when(() => {
+    // Home resets to the initial Lake Naivasha extent. Captured here (once
+    // the view has actually loaded and view.viewpoint reflects the center/
+    // zoom passed to the constructor) rather than reconstructed from raw
+    // coordinates, which is more reliable across projections/scale rounding.
+    const homeWidget = new Home({ view, viewpoint: view.viewpoint.clone() });
+    view.ui.add(homeWidget, "top-left");
+    view.ui.add(new Zoom({ view }), "top-left");
+    view.ui.add(new Compass({ view }), "top-left");
+    view.ui.add(new ScaleBar({ view, unit: "metric" }), "bottom-left");
+
+    setFrameHeight(args.height || 600);
+  });
 }
 
 function updateSelection(selectedSiteId) {
