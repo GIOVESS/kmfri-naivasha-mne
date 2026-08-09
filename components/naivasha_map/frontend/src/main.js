@@ -9,6 +9,10 @@ import Zoom from "@arcgis/core/widgets/Zoom.js";
 import Home from "@arcgis/core/widgets/Home.js";
 import Compass from "@arcgis/core/widgets/Compass.js";
 import ScaleBar from "@arcgis/core/widgets/ScaleBar.js";
+import "@arcgis/core/assets/esri/themes/dark/main.css"; // required for widgets (Zoom/Home/
+                                                          // Compass/ScaleBar) to render styled
+                                                          // and positioned — without this they
+                                                          // exist in the DOM but are invisible
 import "@esri/calcite-components/dist/calcite/calcite.css";
 import { defineCustomElements } from "@esri/calcite-components/dist/loader";
 

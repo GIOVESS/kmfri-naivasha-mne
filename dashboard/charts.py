@@ -146,3 +146,52 @@ def stakeholder_capacity(sites: list[dict[str, Any]]) -> go.Figure:
         margin=dict(l=40, r=20, t=40, b=40),
     )
     return fig
+
+
+def landings_vs_cover(landings: list[dict[str, Any]], polygons_geojson: dict[str, Any]) -> go.Figure:
+    """
+    Dual-axis: total monthly catch (all species/sites) as a line, papyrus
+    cover % at each restoration polygon's survey date as markers.
+
+    This is the actual hypothesis KMFRI/WWF are monitoring — that papyrus
+    restoration drives fisheries recovery — so it's kept basin-wide (not
+    filtered by the map's site selection) rather than folded into the
+    per-site landings_trend chart above.
+    """
+    monthly: dict[str, float] = {}
+    for r in landings:
+        month = r["landing_date"][:7]  # YYYY-MM
+        monthly[month] = monthly.get(month, 0) + r["catch_kg"]
+    months = sorted(monthly.keys())
+
+    fig = go.Figure()
+    if not months:
+        fig.update_layout(title="Fish landings vs papyrus cover — no data", **DARK_LAYOUT)
+        return fig
+
+    fig.add_trace(go.Scatter(
+        x=months, y=[monthly[m] for m in months], mode="lines",
+        name="Total catch (kg)", line=dict(color="#5BC221"),
+    ))
+
+    features = polygons_geojson.get("features", [])
+    if features:
+        survey_x = [f["properties"]["survey_date"][:7] for f in features]
+        survey_y = [f["properties"].get("cover_pct") or 0 for f in features]
+        survey_labels = [f["properties"]["polygon_code"] for f in features]
+        fig.add_trace(go.Scatter(
+            x=survey_x, y=survey_y, mode="markers+text", text=survey_labels,
+            textposition="top center", name="Papyrus cover % (survey)",
+            marker=dict(size=12, color="#E8664B"), yaxis="y2",
+        ))
+
+    fig.update_layout(
+        **DARK_LAYOUT,
+        title="Fish landings trend vs papyrus cover progress",
+        xaxis_title="Month",
+        yaxis=dict(title="Total catch (kg)"),
+        yaxis2=dict(title="Cover %", overlaying="y", side="right", range=[0, 100]),
+        legend_title="Series",
+        margin=dict(l=40, r=40, t=40, b=40),
+    )
+    return fig

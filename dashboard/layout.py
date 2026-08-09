@@ -141,6 +141,24 @@ def render_sites_table(sites: list[dict]) -> None:
     st.dataframe(df, use_container_width=True, hide_index=True)
 
 
+def render_water_quality_summary(sites: list[dict], all_wq: list[dict]) -> None:
+    st.subheader("Water quality summary by site")
+    if not all_wq:
+        st.caption("No water quality samples found.")
+        return
+    site_name_by_id = {s["id"]: s["site_name"] for s in sites}
+    df = pd.DataFrame(all_wq)
+    df["site_name"] = df["site_id"].map(site_name_by_id)
+    summary = (
+        df.groupby("site_name")[["turbidity_ntu", "ph", "dissolved_o2_mgl", "temp_c"]]
+        .mean()
+        .round(2)
+        .reset_index()
+    )
+    summary.columns = ["Site", "Avg turbidity (NTU)", "Avg pH", "Avg dissolved O2 (mg/L)", "Avg temp (°C)"]
+    st.dataframe(summary, use_container_width=True, hide_index=True)
+
+
 def render_page() -> None:
     render_header()
 
@@ -162,5 +180,16 @@ def render_page() -> None:
     water_quality = get_water_quality(site_id) if site_id else all_wq
 
     render_charts_grid(site_id, landings, water_quality, polygons_fc, sites)
+    st.divider()
+
+    st.subheader("Does restoration progress track with fisheries recovery?")
+    st.caption(
+        "Basin-wide, not filtered by the map selection above — this is the "
+        "core relationship KMFRI/WWF are monitoring across the whole platform."
+    )
+    st.plotly_chart(charts.landings_vs_cover(all_landings, polygons_fc), use_container_width=True)
+    st.divider()
+
+    render_water_quality_summary(sites, all_wq)
     st.divider()
     render_sites_table(sites)
