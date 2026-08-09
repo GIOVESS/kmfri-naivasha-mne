@@ -83,36 +83,12 @@ def render_map_and_selection(site_id: int | None, sites: list[dict]) -> None:
             "charts below to that site; use Home (top-left) to reset the view."
         )
 
-        # --- TEMPORARY DEBUG — remove once Reset Filters is confirmed fixed ---
-        # Shows exactly what Python computed THIS render: the site_id param
-        # this render actually used, what's in session_state right now, the
-        # reset token, and the raw value the map component returned. Compare
-        # before/after clicking Reset to see which of these actually changes.
-        st.code(
-            "DEBUG (Python/this render)\n"
-            f"  site_id param passed to render_map_and_selection: {site_id!r}\n"
-            f"  get_selected_site_id() (session_state, read now):  {get_selected_site_id()!r}\n"
-            f"  get_reset_token():                                 {get_reset_token()!r}\n"
-            f"  _map_last_click_seq (session_state):                {st.session_state.get('_map_last_click_seq')!r}\n"
-            f"  _debug_last_action (from previous render's click):  {st.session_state.get('_debug_last_action')!r}\n"
-            f"  raw component_value returned by naivasha_map():    {component_value!r}",
-            language="text",
-        )
-        # --- END TEMPORARY DEBUG ---
-
     with detail_col:
         header_col, reset_col = st.columns([2, 1])
         with header_col:
             st.caption("Site filter")
         with reset_col:
             if st.button("Reset", use_container_width=True, disabled=site_id is None):
-                # TEMPORARY DEBUG marker — persists across the rerun (unlike
-                # a message printed right before st.rerun(), which flashes
-                # too fast to read) so the debug block above can confirm
-                # whether this handler actually ran.
-                st.session_state["_debug_last_action"] = (
-                    f"Reset button clicked (site_id was {site_id!r})"
-                )
                 trigger_reset()
                 st.rerun()
 

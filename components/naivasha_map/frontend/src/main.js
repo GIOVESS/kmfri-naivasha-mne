@@ -199,8 +199,6 @@ function buildMap(args) {
   // `view` already truthy but these still undefined.
   previousSelectedSiteId = args.selectedSiteId;
   lastSeenResetToken = args.resetToken;
-  // TEMPORARY DEBUG — remove once Reset Filters is confirmed fixed.
-  console.log("[naivasha_map] buildMap() mounted. baseline selectedSiteId:", args.selectedSiteId, "baseline resetToken:", args.resetToken);
 
   view.on("click", async (event) => {
     const hit = await view.hitTest(event, { include: nurseryLayer });
@@ -226,6 +224,20 @@ function buildMap(args) {
     }
     if (graphicHit && nurseryLayerView) {
       hoverHighlight = nurseryLayerView.highlight(graphicHit.graphic);
+    }
+  });
+
+  // pointer-move only fires while the cursor is over the map's own canvas —
+  // if the user moves the mouse straight from a marker to something outside
+  // the map (e.g. the Reset Filters button elsewhere on the page) without
+  // crossing another pointer-move first, the hover highlight never gets a
+  // final "miss" event to clear it, so it lingers indefinitely. Listening
+  // on the container's native pointerleave clears it explicitly instead.
+  view.container.addEventListener("pointerleave", () => {
+    view.container.style.cursor = "default";
+    if (hoverHighlight) {
+      hoverHighlight.remove();
+      hoverHighlight = null;
     }
   });
 
@@ -264,8 +276,6 @@ function setSelectionHighlight(graphicOrNull) {
 
 function updateSelection(selectedSiteId) {
   if (!view) return;
-  // TEMPORARY DEBUG — remove once Reset Filters is confirmed fixed.
-  console.log("[naivasha_map] updateSelection() called with selectedSiteId:", selectedSiteId, "previousSelectedSiteId:", previousSelectedSiteId);
 
   if (selectedSiteId == null) {
     setSelectionHighlight(null);
@@ -274,10 +284,7 @@ function updateSelection(selectedSiteId) {
     // manually panned around with no site selected would get yanked back
     // on unrelated Streamlit reruns.
     if (previousSelectedSiteId != null && homeViewpoint) {
-      console.log("[naivasha_map] updateSelection(): clearing — animating back to home viewpoint");
       view.goTo(homeViewpoint, TRANSITION);
-    } else {
-      console.log("[naivasha_map] updateSelection(): clearing — but previousSelectedSiteId was already null/undefined, so NOT animating (this is the guard against yanking the view on unrelated reruns)");
     }
     previousSelectedSiteId = selectedSiteId;
     return;
@@ -298,13 +305,6 @@ initBridge((args) => {
   if (!view) {
     buildMap(args);
   } else {
-    // TEMPORARY DEBUG — remove once Reset Filters is confirmed fixed.
-    console.log(
-      "[naivasha_map] initBridge else-branch. args.resetToken:", args.resetToken,
-      "lastSeenResetToken:", lastSeenResetToken,
-      "args.selectedSiteId:", args.selectedSiteId
-    );
-
     // dashboard/filters.py's trigger_reset() bumps reset_token as a prop
     // rather than relying on selectedSiteId=None alone reaching Python's
     // session_state reliably — this re-confirms the clear through the same
@@ -312,11 +312,8 @@ initBridge((args) => {
     // source of truth for site_id instead of two independent writers
     // racing against each other.
     if (lastSeenResetToken !== undefined && args.resetToken !== lastSeenResetToken) {
-      console.log("[naivasha_map] resetToken CHANGED (", lastSeenResetToken, "->", args.resetToken, ") — calling setSiteSelection(null)");
       lastSeenResetToken = args.resetToken;
       setSiteSelection(null);
-    } else {
-      console.log("[naivasha_map] resetToken unchanged, not treating this as a reset event");
     }
     updateSelection(args.selectedSiteId);
     setFrameHeight(effectiveHeight(args.height));

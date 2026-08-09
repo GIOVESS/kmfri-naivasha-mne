@@ -1,1 +1,0 @@
-import{co as a}from"./index-CgNQTGRn.js";function u(t,f,e){if(!(e!=null&&e.features)||!e.hasZ)return;const o=a(e.geometryType,f,t.outSpatialReference);if(o!=null)for(const n of e.features)o(n.geometry)}export{u as t};
