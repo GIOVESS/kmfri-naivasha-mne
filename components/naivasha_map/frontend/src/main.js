@@ -96,6 +96,11 @@ function geojsonToBlobUrl(featureCollection) {
 let view = null;
 let nurseryLayer = null;
 let polygonLayer = null;
+let homeViewpoint = null;
+let previousSelectedSiteId; // undefined until first render — distinguishes
+                            // "never selected anything" from "selection was
+                            // just cleared", so Reset Filters snaps the view
+                            // back but initial load doesn't animate for no reason
 
 const HOME_VIEWPOINT = { center: [36.32, -0.77], zoom: 12 }; // Lake Naivasha
 
@@ -142,18 +147,34 @@ function buildMap(args) {
     // the view has actually loaded and view.viewpoint reflects the center/
     // zoom passed to the constructor) rather than reconstructed from raw
     // coordinates, which is more reliable across projections/scale rounding.
-    const homeWidget = new Home({ view, viewpoint: view.viewpoint.clone() });
+    homeViewpoint = view.viewpoint.clone();
+    const homeWidget = new Home({ view, viewpoint: homeViewpoint });
     view.ui.add(homeWidget, "top-left");
     view.ui.add(new Zoom({ view }), "top-left");
     view.ui.add(new Compass({ view }), "top-left");
     view.ui.add(new ScaleBar({ view, unit: "metric" }), "bottom-left");
 
     setFrameHeight(args.height || 600);
+    previousSelectedSiteId = args.selectedSiteId; // avoid a spurious reset-animation on the next rerun
   });
 }
 
 function updateSelection(selectedSiteId) {
-  if (!view || selectedSiteId == null) return;
+  if (!view) return;
+
+  if (selectedSiteId == null) {
+    // Only snap back to the home extent on an actual clear (Reset Filters),
+    // not on every rerun while nothing is selected — otherwise a user who's
+    // manually panned around with no site selected would get yanked back
+    // on unrelated Streamlit reruns.
+    if (previousSelectedSiteId != null && homeViewpoint) {
+      view.goTo(homeViewpoint, { duration: 400 });
+    }
+    previousSelectedSiteId = selectedSiteId;
+    return;
+  }
+
+  previousSelectedSiteId = selectedSiteId;
   nurseryLayer.queryFeatures({ where: `id = ${selectedSiteId}`, returnGeometry: true }).then((result) => {
     const g = result.features[0];
     if (g) {

@@ -14,7 +14,7 @@ import streamlit as st
 
 from components.naivasha_map import naivasha_map
 from dashboard import charts
-from dashboard.filters import get_selected_site_id, sync_from_map_component
+from dashboard.filters import get_selected_site_id, set_selected_site_id, sync_from_map_component
 from services.landings_repo import get_landings
 from services.sites_repo import get_nursery_site_by_id, get_nursery_sites_geojson, \
     get_restoration_polygons_geojson, list_nursery_sites
@@ -65,9 +65,18 @@ def render_map_panel() -> None:
 
 
 def render_top_kpi_row(site_id: int | None, sites: list[dict]) -> None:
-    """Selection-aware row: what you're currently looking at."""
+    """Selection-aware row: what you're currently looking at, plus a control
+    to clear the site filter and return to the all-sites view."""
     site = get_nursery_site_by_id(site_id) if site_id else None
     total_capacity = sum((s.get("capacity_units") or 0) for s in sites)
+
+    header_col, reset_col = st.columns([5, 1])
+    with header_col:
+        st.caption("Site filter")
+    with reset_col:
+        if st.button("Reset filters", use_container_width=True, disabled=site_id is None):
+            set_selected_site_id(None)
+            st.rerun()
 
     cols = st.columns(4)
     with cols[0]:
