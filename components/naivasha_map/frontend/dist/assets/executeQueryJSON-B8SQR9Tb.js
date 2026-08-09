@@ -1,0 +1,1 @@
+import{c8 as f,c9 as i,ca as m}from"./index-CMNW1mmi.js";import{y as u}from"./query-DPp-PUG-.js";async function S(a,r,t,n){const o=await p(a,r,t,n);return f.fromJSON(o)}async function p(a,r,t,n){const o=i(a),s={...t},c=m.from(r),{data:e}=await u(o,c,c.sourceSpatialReference,s,n);return e}export{p as a,S as s};

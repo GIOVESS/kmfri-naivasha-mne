@@ -96,13 +96,17 @@ function geojsonToBlobUrl(featureCollection) {
 let view = null;
 let nurseryLayer = null;
 let polygonLayer = null;
+let nurseryLayerView = null;
 let homeViewpoint = null;
+let hoverHighlight = null;
+let selectionHighlight = null;
 let previousSelectedSiteId; // undefined until first render — distinguishes
                             // "never selected anything" from "selection was
                             // just cleared", so Reset Filters snaps the view
                             // back but initial load doesn't animate for no reason
 
 const HOME_VIEWPOINT = { center: [36.32, -0.77], zoom: 12 }; // Lake Naivasha
+const TRANSITION = { duration: 400, easing: "ease-in-out" };
 
 function buildMap(args) {
   // Kept for future Places/Geocoding/Routing use (privileges already enabled
@@ -116,6 +120,20 @@ function buildMap(args) {
     renderer: NURSERY_SITE_RENDERER,
     outFields: ["*"],
     title: "Nursery sites",
+    popupTemplate: {
+      title: "{site_name}",
+      content: [
+        {
+          type: "fields",
+          fieldInfos: [
+            { fieldName: "site_code", label: "Site code" },
+            { fieldName: "stakeholder", label: "Stakeholder" },
+            { fieldName: "capacity_units", label: "Capacity (seedlings)" },
+            { fieldName: "established", label: "Established" },
+          ],
+        },
+      ],
+    },
   });
 
   polygonLayer = new GeoJSONLayer({
@@ -132,6 +150,10 @@ function buildMap(args) {
     map,
     center: HOME_VIEWPOINT.center,
     zoom: HOME_VIEWPOINT.zoom,
+    // Shared style for both the hover and selection highlights below — amber
+    // reads clearly against the light basemap and doesn't collide with the
+    // marker/polygon palette (greens, blue, grey).
+    highlightOptions: { color: "#FFC107", haloOpacity: 0.9, fillOpacity: 0.25 },
   });
 
   view.on("click", async (event) => {
@@ -140,6 +162,29 @@ function buildMap(args) {
     if (graphicHit) {
       setSiteSelection(graphicHit.graphic.attributes.id);
     }
+  });
+
+  // Hover feedback: pointer cursor + a light highlight halo over whatever
+  // marker is under the cursor, distinct from the (persistent) selection
+  // highlight below — makes it visually obvious the markers are clickable
+  // before the user commits to a click.
+  view.on("pointer-move", async (event) => {
+    const hit = await view.hitTest(event, { include: nurseryLayer });
+    const graphicHit = hit.results.find((r) => r.graphic?.layer === nurseryLayer);
+
+    view.container.style.cursor = graphicHit ? "pointer" : "default";
+
+    if (hoverHighlight) {
+      hoverHighlight.remove();
+      hoverHighlight = null;
+    }
+    if (graphicHit && nurseryLayerView) {
+      hoverHighlight = nurseryLayerView.highlight(graphicHit.graphic);
+    }
+  });
+
+  view.whenLayerView(nurseryLayer).then((layerView) => {
+    nurseryLayerView = layerView;
   });
 
   view.when(() => {
@@ -159,16 +204,27 @@ function buildMap(args) {
   });
 }
 
+function setSelectionHighlight(graphicOrNull) {
+  if (selectionHighlight) {
+    selectionHighlight.remove();
+    selectionHighlight = null;
+  }
+  if (graphicOrNull && nurseryLayerView) {
+    selectionHighlight = nurseryLayerView.highlight(graphicOrNull);
+  }
+}
+
 function updateSelection(selectedSiteId) {
   if (!view) return;
 
   if (selectedSiteId == null) {
+    setSelectionHighlight(null);
     // Only snap back to the home extent on an actual clear (Reset Filters),
     // not on every rerun while nothing is selected — otherwise a user who's
     // manually panned around with no site selected would get yanked back
     // on unrelated Streamlit reruns.
     if (previousSelectedSiteId != null && homeViewpoint) {
-      view.goTo(homeViewpoint, { duration: 400 });
+      view.goTo(homeViewpoint, TRANSITION);
     }
     previousSelectedSiteId = selectedSiteId;
     return;
@@ -178,7 +234,8 @@ function updateSelection(selectedSiteId) {
   nurseryLayer.queryFeatures({ where: `id = ${selectedSiteId}`, returnGeometry: true }).then((result) => {
     const g = result.features[0];
     if (g) {
-      view.goTo({ target: g.geometry, zoom: 15 }, { duration: 400 });
+      view.goTo({ target: g.geometry, zoom: 15 }, TRANSITION);
+      setSelectionHighlight(g);
     }
   });
 }
